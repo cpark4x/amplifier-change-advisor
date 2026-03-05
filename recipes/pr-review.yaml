@@ -1,0 +1,202 @@
+name: pr-review
+version: "1.0.0"
+description: >
+  Structured multi-lens PR review: PR discovery, blast radius audit,
+  CTO/CPO analysis, and assembled review document with recommendations.
+  Produces a starting point for interactive review discussion.
+
+context:
+  pr_number: ""
+  repo: ""
+  project_context: ""
+
+steps:
+  - id: discover_pr
+    type: bash
+    timeout: 60
+    parse_json: true
+    output: pr_data
+    command: |
+      set -euo pipefail
+
+      # Build optional --repo flag
+      REPO_FLAG=""
+      if [ -n "{{repo}}" ]; then
+        REPO_FLAG="--repo {{repo}}"
+      fi
+
+      # Determine PR number (provided or latest open)
+      PR_NUM="{{pr_number}}"
+      if [ -z "$PR_NUM" ]; then
+        PR_NUM=$(gh pr list $REPO_FLAG --state open --limit 1 --json number --jq '.[0].number')
+      fi
+
+      if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+        echo '{"error": "No open PRs found"}'
+        exit 1
+      fi
+
+      # Fetch PR metadata
+      gh pr view "$PR_NUM" $REPO_FLAG \
+        --json title,body,author,files,additions,deletions,number,url,headRefName,baseRefName \
+        > /tmp/pr_meta.json
+
+      # Fetch full diff
+      gh pr diff "$PR_NUM" $REPO_FLAG > /tmp/pr_diff.txt
+
+      # Combine metadata + diff into single JSON
+      jq --rawfile diff /tmp/pr_diff.txt '. + {diff: $diff}' /tmp/pr_meta.json
+
+  - id: blast_radius_audit
+    agent: foundation:zen-architect
+    timeout: 900
+    output: blast_radius
+    prompt: |
+      ANALYZE MODE.
+
+      A PR has been submitted. Your job is to perform a **blast radius audit** — understand not just what the diff changes, but what it **brings into the project**.
+
+      ## PR Information
+
+      {{pr_data}}
+
+      ## Your Task
+
+      Investigate the full impact of this PR:
+
+      **1. Direct Changes**
+      What files are modified and what do the modifications do?
+
+      **2. New Dependencies**
+      If the PR adds dependencies (packages, bundles, includes, imports), investigate each one:
+      - Download/read the dependency source
+      - Inventory what it adds: tools, hooks, agents, context files, modules
+      - Identify filesystem changes: directories created, files written
+      - Check for network calls, external services, API keys required
+
+      **3. Security Surface**
+      What new attack surface does this introduce?
+      - Prompt injection vectors
+      - Data persistence and privacy implications
+      - Authentication/authorization changes
+      - Extension loading or dynamic code execution
+
+      **4. Behavioral Changes**
+      Does this change how existing components behave?
+      - Hook injections that modify LLM behavior
+      - Context injections that shape agent responses
+      - Tool additions that expand agent capabilities
+
+      **5. Operational Impact**
+      What are the runtime implications?
+      - New dependencies and their size
+      - Token overhead from context/hook injections
+      - Disk usage, memory usage, startup time
+
+      Produce a structured inventory organized by these 5 categories. For each item, assign a risk rating: LOW, MEDIUM, or HIGH with a one-line justification.
+
+  - id: multi_lens_analysis
+    agent: foundation:zen-architect
+    timeout: 900
+    output: analysis
+    prompt: |
+      REVIEW MODE.
+
+      You are performing a multi-lens analysis of a PR. You have the PR details and a blast radius audit.
+
+      ## PR Information
+
+      {{pr_data}}
+
+      ## Blast Radius Audit
+
+      {{blast_radius}}
+
+      ## Project Context
+
+      {{project_context}}
+
+      ## Your Task
+
+      Analyze this PR from two executive perspectives:
+
+      ### CTO Lens
+
+      Evaluate:
+      - **Architecture**: Does this fit the project's technical architecture? Does it introduce unnecessary coupling?
+      - **Security**: What risks does the blast radius audit reveal? Are they acceptable?
+      - **Dependencies**: Is the dependency management sound? Pinned versions? Trusted sources?
+      - **Integration pattern**: Is this the right way to integrate this capability?
+      - **Technical debt**: Does this add debt? Is it justified?
+      - **Operational risk**: What can go wrong in production?
+
+      ### CPO Lens
+
+      Evaluate:
+      - **Product fit**: Does this capability align with the product's value proposition?
+      - **User impact**: How does this change the user experience? For better or worse?
+      - **Timing**: Is this the right time to add this capability?
+      - **Design alignment**: Does the integration approach match how the product should work?
+      - **Trust & transparency**: Does this maintain or undermine user trust?
+      - **Opportunity cost**: What are we NOT doing by investing in this?
+
+      ### Output Format
+
+      Produce numbered recommendations. For each:
+
+      1. **Severity**: BLOCKING (must fix before merge), IMPORTANT (should address), or ADVISORY (consider for future)
+      2. **Lens**: CTO, CPO, or BOTH
+      3. **Finding**: One-sentence description of the issue
+      4. **Rationale**: Why this matters (2-3 sentences with specific evidence from the audit)
+      5. **Recommendation**: What specifically should change
+
+      Order: BLOCKING first, then IMPORTANT, then ADVISORY.
+
+      End with an **Overall Verdict**: APPROVE, REQUEST CHANGES, or DISCUSS — with a one-paragraph justification.
+
+  - id: assemble_review
+    agent: foundation:zen-architect
+    timeout: 600
+    output: final_review
+    prompt: |
+      ANALYZE MODE.
+
+      Assemble the final PR review document from the completed analysis.
+
+      ## PR Information
+
+      {{pr_data}}
+
+      ## Blast Radius Audit
+
+      {{blast_radius}}
+
+      ## Multi-Lens Analysis
+
+      {{analysis}}
+
+      ## Your Task
+
+      Produce a clean, well-structured review document with these sections:
+
+      ### 1. Executive Summary
+      2-3 sentences: what this PR does, the overall blast radius, and the verdict.
+
+      ### 2. PR Overview
+      Title, author, branch, files changed, additions/deletions. A plain-English summary of what the diff does.
+
+      ### 3. Blast Radius Summary
+      A table or concise list of what this PR actually brings into the project beyond the diff. Focus on what would surprise someone who only read the diff.
+
+      ### 4. Recommendations
+      The numbered recommendations from the multi-lens analysis, cleaned up and formatted consistently. Each with severity tag, lens tag, finding, rationale, and specific recommendation.
+
+      ### 5. Overall Verdict
+      APPROVE, REQUEST CHANGES, or DISCUSS — with the justification.
+
+      ### 6. Discussion Starters
+      3-5 questions the PR author and reviewer should discuss before making a final decision. These should be genuine open questions, not rhetorical ones.
+
+      ---
+
+      This document will be used as the starting point for an interactive review discussion. Make it clear, scannable, and actionable.
