@@ -118,7 +118,7 @@ steps:
 
       ## Your Task
 
-      Analyze this PR from two executive perspectives:
+      Analyze this PR from four executive perspectives:
 
       ### CTO Lens
 
@@ -140,12 +140,31 @@ steps:
       - **Trust & transparency**: Does this maintain or undermine user trust?
       - **Opportunity cost**: What are we NOT doing by investing in this?
 
+
+      ### COO Lens
+
+      Evaluate:
+      - **Deployment**: Does this change deployment complexity or risk?
+      - **Monitoring**: Can we observe the impact of this change in production?
+      - **Rollback**: How easy is it to undo if problems arise?
+      - **Process**: Does this change team workflows or coordination requirements?
+      - **Maintenance**: Who maintains this going forward? Is that sustainable?
+
+      ### CFO Lens
+
+      Evaluate:
+      - **Cost**: What are the direct costs (compute, storage, API fees, licenses)?
+      - **Investment**: How much ongoing investment does this require?
+      - **Opportunity cost**: What else could the team be doing?
+      - **Risk exposure**: What financial risk does this introduce?
+      - **ROI timeline**: When does this pay for itself?
+
       ### Output Format
 
       Produce numbered recommendations. For each:
 
       1. **Severity**: BLOCKING (must fix before merge), IMPORTANT (should address), or ADVISORY (consider for future)
-      2. **Lens**: CTO, CPO, or BOTH
+      2. **Lens**: CTO, CPO, COO, CFO, or MULTIPLE
       3. **Finding**: One-sentence description of the issue
       4. **Rationale**: Why this matters (2-3 sentences with specific evidence from the audit)
       5. **Recommendation**: What specifically should change
