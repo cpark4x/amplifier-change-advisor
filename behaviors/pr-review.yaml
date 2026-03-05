@@ -1,8 +1,0 @@
-bundle:
-  name: pr-review-behavior
-  version: 1.0.0
-  description: Structured multi-lens PR review capability
-
-context:
-  include:
-    - pr-review:context/pr-review-awareness.md

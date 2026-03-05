@@ -1,26 +1,28 @@
-# amplifier-pr-review
+# Change Advisor
 
-Structured multi-lens PR review workflow for Amplifier.
+Multi-lens decision advisor for evaluating changes to your product.
 
 Goes beyond "does this code work?" to answer **"should this change exist in this product, and is this the right way to do it?"**
 
-## What It Does
+## The Problem
 
-A 4-step recipe pipeline:
+AI-powered development amplifies individual velocity but fragments collective coherence. Contributors arrive with polished, AI-generated PRs that may be fundamentally misaligned with your project's philosophy — because their AI optimized for their task, not your product's coherence.
 
-1. **PR Discovery** - Fetches metadata, files, and full diff via GitHub CLI
-2. **Blast Radius Audit** - Investigates what the PR actually brings in beyond the diff (dependencies, tools, hooks, security surface)
-3. **Multi-Lens Analysis** - CTO perspective (technical risk, architecture, security) + CPO perspective (product fit, user impact, timing)
-4. **Assembled Review** - Clean document with executive summary, numbered recommendations, verdict, and discussion starters
+Change Advisor forces the alignment conversation that velocity skipped.
 
-The output is a starting point for interactive discussion, not an automated approval gate.
+## How It Works
 
-## Usage
+1. **Investigate the blast radius** — what does this change actually bring in beyond the diff?
+2. **Analyze through multiple lenses** — CTO, CPO, COO, CFO perspectives you might not naturally have
+3. **Structure the conversation** — numbered recommendations discussed one-by-one with the decision-maker
+4. **The decision-maker decides** — the tool amplifies judgment, never replaces it
 
-### Standalone
+## Scenarios
+
+### V1: PR Review (Current)
 
 ```bash
-amplifier run --bundle git+https://github.com/cpark4x/amplifier-pr-review@main
+amplifier run --bundle git+https://github.com/cpark4x/amplifier-change-advisor@main
 ```
 
 Then in session:
@@ -34,12 +36,7 @@ Add to your project's `bundle.md` includes:
 
 ```yaml
 includes:
-  - bundle: git+https://github.com/cpark4x/amplifier-pr-review@main#subdirectory=behaviors/pr-review.yaml
-```
-
-Then in any session:
-```
-run the pr-review recipe on PR #10
+  - bundle: git+https://github.com/cpark4x/amplifier-change-advisor@main#subdirectory=behaviors/change-advisor.yaml
 ```
 
 ### Recipe context variables
@@ -49,6 +46,17 @@ run the pr-review recipe on PR #10
 | `pr_number` | No | Latest open PR | Which PR to review |
 | `repo` | No | Current repo | Target repository (owner/repo) |
 | `project_context` | No | (none) | Project description for reviewer context |
+
+## Philosophy
+
+- **The conversation is the product** — the analysis starts a dialogue, it doesn't end it
+- **Show what the diff hides** — investigate blast radius, not just code changes
+- **Lenses over opinions** — structured perspectives, not vague concerns
+- **The decision-maker decides** — amplify judgment, never replace it
+
+## Vision
+
+See [docs/01-vision/VISION.md](docs/01-vision/VISION.md) for the full product vision.
 
 ## Requirements
 

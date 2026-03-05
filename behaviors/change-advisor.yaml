@@ -1,0 +1,8 @@
+bundle:
+  name: change-advisor-behavior
+  version: 1.0.0
+  description: Multi-lens decision advisor capability for evaluating changes
+
+context:
+  include:
+    - change-advisor:context/change-advisor-awareness.md

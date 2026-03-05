@@ -1,15 +1,15 @@
 ---
 bundle:
-  name: pr-review
+  name: change-advisor
   version: 1.0.0
-  description: Structured multi-lens PR review workflow
+  description: Multi-lens decision advisor for evaluating changes to your product
 
 includes:
   - bundle: git+https://github.com/microsoft/amplifier-foundation@main
   - bundle: git+https://github.com/microsoft/amplifier-bundle-recipes@main#subdirectory=behaviors/recipes.yaml
-  - bundle: pr-review:behaviors/pr-review
+  - bundle: change-advisor:behaviors/change-advisor
 ---
 
-# PR Review
+# Change Advisor
 
-@pr-review:context/pr-review-instructions.md
+@change-advisor:context/change-advisor-instructions.md

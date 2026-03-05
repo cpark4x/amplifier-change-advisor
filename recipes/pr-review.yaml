@@ -1,4 +1,4 @@
-name: pr-review
+name: change-advisor-pr-review
 version: "1.0.0"
 description: >
   Structured multi-lens PR review: PR discovery, blast radius audit,
