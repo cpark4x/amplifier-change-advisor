@@ -152,7 +152,7 @@ steps:
 
       Order: BLOCKING first, then IMPORTANT, then ADVISORY.
 
-      End with an **Overall Verdict**: APPROVE, REQUEST CHANGES, or DISCUSS — with a one-paragraph justification.
+      End with an **Overall Verdict**: DISCUSS — with a one-paragraph justification.
 
   - id: assemble_review
     agent: foundation:zen-architect
@@ -192,7 +192,7 @@ steps:
       The numbered recommendations from the multi-lens analysis, cleaned up and formatted consistently. Each with severity tag, lens tag, finding, rationale, and specific recommendation.
 
       ### 5. Overall Verdict
-      APPROVE, REQUEST CHANGES, or DISCUSS — with the justification.
+      DISCUSS — with the justification.
 
       ### 6. Discussion Starters
       3-5 questions the PR author and reviewer should discuss before making a final decision. These should be genuine open questions, not rhetorical ones.
