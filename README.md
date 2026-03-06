@@ -1,8 +1,8 @@
 # Change Advisor
 
-Multi-lens decision advisor for evaluating changes to your product.
+**Goes beyond "does this code work?" to answer "should this change exist in this product, and is this the right way to do it?"**
 
-Goes beyond "does this code work?" to answer **"should this change exist in this product, and is this the right way to do it?"**
+A multi-lens decision advisor for evaluating changes. Built for the age of AI-generated PRs — where individual velocity is high but collective coherence is fragile.
 
 ## The Problem
 
@@ -17,9 +17,9 @@ Change Advisor forces the alignment conversation that velocity skipped.
 3. **Structure the conversation** — numbered recommendations discussed one-by-one with the decision-maker
 4. **The decision-maker decides** — the tool amplifies judgment, never replaces it
 
-## Scenarios
+## Usage
 
-### V1: PR Review (Current)
+### V1: PR Review
 
 ```bash
 amplifier run --bundle git+https://github.com/cpark4x/amplifier-change-advisor@main
@@ -32,8 +32,6 @@ run the pr-review recipe on PR #10
 
 ### As a dependency in another project
 
-Add to your project's `bundle.md` includes:
-
 ```yaml
 includes:
   - bundle: git+https://github.com/cpark4x/amplifier-change-advisor@main#subdirectory=behaviors/change-advisor.yaml
@@ -42,7 +40,7 @@ includes:
 ### Recipe context variables
 
 | Variable | Required | Default | Purpose |
-|----------|----------|---------|---------|
+|---|---|---|---|
 | `pr_number` | No | Latest open PR | Which PR to review |
 | `repo` | No | Current repo | Target repository (owner/repo) |
 | `project_context` | No | (none) | Project description for reviewer context |
@@ -54,15 +52,20 @@ includes:
 - **Lenses over opinions** — structured perspectives, not vague concerns
 - **The decision-maker decides** — amplify judgment, never replace it
 
-## Vision
-
-See [docs/01-vision/VISION.md](docs/01-vision/VISION.md) for the full product vision.
-
 ## Requirements
 
 - [Amplifier](https://github.com/microsoft/amplifier) with the recipes bundle
 - GitHub CLI (`gh`) authenticated
 
-## License
+---
 
-MIT
+## Built by
+
+**Chris Park** — Senior PM, Microsoft Office of the CTO, AI Incubation group.
+Engineering degree from Waterloo. 17 years shipping product.
+
+[LinkedIn](https://www.linkedin.com/in/chrispark1/) · [GitHub](https://github.com/cpark4x)
+
+---
+
+MIT License
