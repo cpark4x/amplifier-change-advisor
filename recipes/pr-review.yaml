@@ -47,6 +47,58 @@ steps:
       # Combine metadata + diff into single JSON
       jq --rawfile diff /tmp/pr_diff.txt '. + {diff: $diff}' /tmp/pr_meta.json
 
+  - id: load_project_context
+    type: bash
+    timeout: 30
+    output: project_context_data
+    command: |
+      set -euo pipefail
+
+      CONTEXT=""
+
+      # Vision doc — try common locations
+      for VISION_PATH in "docs/01-vision/VISION.md" "docs/VISION.md" "VISION.md"; do
+        if [ -f "$VISION_PATH" ]; then
+          CONTEXT="${CONTEXT}## PRODUCT VISION\n$(cat $VISION_PATH)\n\n"
+          break
+        fi
+      done
+
+      # Backlog
+      for BACKLOG_PATH in "docs/BACKLOG.md" "BACKLOG.md"; do
+        if [ -f "$BACKLOG_PATH" ]; then
+          CONTEXT="${CONTEXT}## PRODUCT BACKLOG\n$(cat $BACKLOG_PATH)\n\n"
+          break
+        fi
+      done
+
+      # Most recent test log
+      LATEST_LOG=$(find docs/test-log -name "*.md" ! -name "README.md" 2>/dev/null | sort | tail -1)
+      if [ -n "$LATEST_LOG" ]; then
+        CONTEXT="${CONTEXT}## LATEST TEST LOG ($(basename $LATEST_LOG))\n$(cat $LATEST_LOG)\n\n"
+      fi
+
+      # README as fallback if neither vision nor backlog found
+      if [ -z "$CONTEXT" ] && [ -f "README.md" ]; then
+        CONTEXT="${CONTEXT}## README\n$(cat README.md)\n\n"
+      fi
+
+      # Recent git history — always useful
+      GIT_LOG=$(git log --oneline -20 2>/dev/null || echo "No git history available")
+      CONTEXT="${CONTEXT}## RECENT COMMITS (last 20)\n${GIT_LOG}\n\n"
+
+      # Merge with manually provided project_context if any (backwards compatibility)
+      if [ -n "{{project_context}}" ]; then
+        CONTEXT="${CONTEXT}## ADDITIONAL CONTEXT (provided manually)\n{{project_context}}\n\n"
+      fi
+
+      # If nothing found at all
+      if [ -z "$CONTEXT" ]; then
+        CONTEXT="No project documentation found in working directory. Review will proceed without project context."
+      fi
+
+      printf '%s' "$CONTEXT"
+
   - id: blast_radius_audit
     agent: foundation:zen-architect
     timeout: 900
