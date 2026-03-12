@@ -1,7 +1,7 @@
 ---
 bundle:
   name: change-advisor
-  version: 1.0.0
+  version: 2.0.0
   description: Multi-lens decision advisor for evaluating changes to your product
 
 includes:

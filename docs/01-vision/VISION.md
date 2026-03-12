@@ -13,7 +13,7 @@ _(Change Advisor | amplifier-change-advisor)_
 
 ## Summary
 
-AI-powered development amplifies individual velocity but fragments collective coherence. Contributors arrive with polished, well-tested PRs that are fundamentally misaligned with the project's philosophy — because AI optimized for their task, not your product. Change Advisor investigates the true scope of proposed changes, evaluates them through executive lenses (CTO, CPO, COO, CFO) the reviewer may not naturally have, and structures an interactive discussion that surfaces the decision-maker's real-world context. The tool doesn't decide — it makes you a better decision-maker.
+AI-powered development amplifies individual velocity but fragments collective coherence. Contributors arrive with polished, well-tested PRs that are fundamentally misaligned with the project's philosophy — because AI optimized for their task, not your product. Change Advisor investigates the true scope of proposed changes, evaluates them through 2 executive lenses (CTO, CPO) the reviewer may not naturally have, and structures an interactive discussion that surfaces the decision-maker's real-world context. The tool doesn't decide — it makes you a better decision-maker.
 
 ---
 
@@ -155,7 +155,7 @@ Change Advisor is built for decision quality, not review throughput.
 #### 2. Multi-Lens Analysis Over Single-Perspective Review
 
 **The old way:** One reviewer with one perspective checks the change against their expertise.
-**The Change Advisor way:** Systematically evaluate through CTO (technical risk, architecture, security), CPO (product fit, user impact, timing), COO (operational impact, process), and CFO (resource, cost, investment) lenses. Each lens is an alignment check against the project's philosophy from an angle the reviewer might not naturally check.
+**The Change Advisor way:** Systematically evaluate through CTO (technical risk, architecture, security) and CPO (product fit, user impact, timing) lenses. Each lens is an alignment check against the project's philosophy from an angle the reviewer might not naturally check.
 
 #### 3. Structured Dialogue Over Automated Verdicts
 
@@ -195,7 +195,7 @@ If a change has impact beyond what's visible in the diff, the tool must surface 
 
 ### Principle 3: Lenses Over Opinions
 
-The tool provides structured perspectives (CTO, CPO, COO, CFO), not unstructured opinions. Each lens has defined evaluation criteria. Recommendations are tagged by lens, severity, and rationale. This rules out: vague "this looks risky" assessments, unlabeled concerns, opinions without evidence.
+The tool provides structured perspectives (CTO, CPO), not unstructured opinions. Each lens has defined evaluation criteria. Recommendations are tagged by lens, severity, and rationale. This rules out: vague "this looks risky" assessments, unlabeled concerns, opinions without evidence.
 
 ### Principle 4: The Decision-Maker Decides
 
@@ -303,4 +303,5 @@ People who approve changes to their systems that they didn't author, often under
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | v1.0 | 2026-03-05 | Chris Park | Initial vision document |
+| v2.0.0 | 2026-03-11 | Chris Park | Auto-load project context, contributor history, CPO lens reworked (8 dimensions of product leadership), discussion agenda format with Ask: questions, save review to file, COO/CFO lenses removed |
 

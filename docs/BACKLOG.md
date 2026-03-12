@@ -1,14 +1,14 @@
 # Change Advisor — Backlog
 
-**Last Updated:** 2026-03-05
+**Last Updated:** 2026-03-11
 
 ## Current Status
 
-V1 PR Review recipe shipped and working. 4 executive lenses (CTO, CPO, COO, CFO) active. Vision document complete. Bundle available as global app bundle.
+V2.0.0 shipped. 7-step pipeline with auto-loaded project context, contributor history, reworked CPO lens (8 dimensions), discussion agenda format with Ask: questions, and review saved to docs/pr-reviews/. Two lenses: CTO + CPO (COO/CFO removed in v2). Bundle available as global app bundle.
 
 ## Active Work
 
-None — V1 shipped.
+None — V2 shipped.
 
 ## Recently Completed
 
@@ -19,6 +19,7 @@ None — V1 shipped.
 | All 4 executive lenses | 2026-03-05 | CTO, CPO, COO, CFO in recipe |
 | Verdict fix (DISCUSS only) | 2026-03-05 | Aligns with Principle 4: Decision-Maker Decides |
 | Global app bundle install | 2026-03-05 | Available in all Amplifier sessions |
+| V2.0.0 release | 2026-03-11 | Auto-load context, contributor history, CPO 8-dimension rework, discussion agenda, save-to-file, COO/CFO removed |
 
 ## Prioritized Backlog
 
@@ -49,5 +50,6 @@ None — V1 shipped.
 | Epic | Status | Description |
 |------|--------|-------------|
 | V1: PR Review | Shipped | Blast radius + 4 lenses + assembled review for GitHub PRs |
-| V2: Expanded Scenarios | Not started | RFCs, architecture proposals, dependency upgrades |
-| V3: Organizational Memory | Not started | Decision history and pattern recognition |
+| V2: Self-Loading + CPO Rework | Shipped | Auto-load context, contributor history, 2-lens CTO/CPO, discussion agenda, save-to-file |
+| V3: Expanded Scenarios | Not started | RFCs, architecture proposals, dependency upgrades |
+| V4: Organizational Memory | Not started | Decision history and pattern recognition |
