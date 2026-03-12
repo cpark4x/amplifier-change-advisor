@@ -1,5 +1,5 @@
 name: change-advisor-pr-review
-version: "1.0.0"
+version: "2.0.0"
 description: >
   Structured multi-lens PR review: PR discovery, blast radius audit,
   CTO/CPO analysis, and assembled review document with recommendations.
@@ -99,6 +99,51 @@ steps:
 
       printf '%s' "$CONTEXT"
 
+  - id: load_contributor_context
+    type: bash
+    timeout: 30
+    output: contributor_context
+    command: |
+      set -euo pipefail
+
+      # Write pr_data to temp file to avoid shell quoting issues with large JSON
+      cat > /tmp/pr_data_contrib.json <<'PRDATA_EOF'
+      {{pr_data}}
+      PRDATA_EOF
+
+      AUTHOR=$(jq -r '.author.login // .author.name // "unknown"' /tmp/pr_data_contrib.json)
+
+      REPO_FLAG=""
+      if [ -n "{{repo}}" ]; then
+        REPO_FLAG="--repo {{repo}}"
+      fi
+
+      CONTEXT="## CONTRIBUTOR: ${AUTHOR}\n\n"
+
+      # Get their full PR history on this repo
+      PR_HISTORY=$(gh pr list $REPO_FLAG --author "$AUTHOR" --state all --limit 20 \
+        --json number,title,state,mergedAt 2>/dev/null || echo "[]")
+
+      TOTAL=$(echo "$PR_HISTORY" | jq 'length')
+      MERGED=$(echo "$PR_HISTORY" | jq '[.[] | select(.state == "MERGED")] | length')
+      CLOSED=$(echo "$PR_HISTORY" | jq '[.[] | select(.state == "CLOSED")] | length')
+      OPEN=$(echo "$PR_HISTORY" | jq '[.[] | select(.state == "OPEN")] | length')
+
+      if [ "$TOTAL" -eq "1" ]; then
+        CONTRIBUTOR_TYPE="First PR on this repo — treat as external contributor unfamiliar with project conventions."
+      elif [ "$TOTAL" -le "3" ]; then
+        CONTRIBUTOR_TYPE="New contributor (${TOTAL} PRs, ${MERGED} merged) — may not know all architectural patterns yet."
+      else
+        CONTRIBUTOR_TYPE="Regular contributor (${TOTAL} PRs, ${MERGED} merged) — familiar with the codebase."
+      fi
+
+      CONTEXT="${CONTEXT}${CONTRIBUTOR_TYPE}\n"
+      CONTEXT="${CONTEXT}PR record: ${TOTAL} total · ${MERGED} merged · ${CLOSED} closed · ${OPEN} open\n\n"
+      CONTEXT="${CONTEXT}PR history:\n"
+      CONTEXT="${CONTEXT}$(echo "$PR_HISTORY" | jq -r '.[] | "- PR #\(.number): \(.title) [\(.state)]"')\n"
+
+      printf '%s' "$CONTEXT"
+
   - id: blast_radius_audit
     agent: foundation:zen-architect
     timeout: 900
@@ -111,6 +156,10 @@ steps:
       ## PR Information
 
       {{pr_data}}
+
+      ## Project Context
+
+      {{project_context_data}}
 
       ## Your Task
 
@@ -145,7 +194,15 @@ steps:
       - Token overhead from context/hook injections
       - Disk usage, memory usage, startup time
 
-      Produce a structured inventory organized by these 5 categories. For each item, assign a risk rating: LOW, MEDIUM, or HIGH with a one-line justification.
+      **6. Project Alignment**
+      Does this PR silently remove, override, or contradict established project patterns?
+      - Architecture patterns or conventions defined in the project vision/docs
+      - Components, agents, or capabilities registered in the project that are now missing
+      - Rules, gates, or enforced conventions the project has established
+      - Active backlog items this PR affects (positively or negatively)
+      - Anything that would surprise the project owner who only read the diff description
+
+      Produce a structured inventory organized by these 6 categories. For each item, assign a risk rating: LOW, MEDIUM, or HIGH with a one-line justification.
 
   - id: multi_lens_analysis
     agent: foundation:zen-architect
@@ -154,7 +211,8 @@ steps:
     prompt: |
       REVIEW MODE.
 
-      You are performing a multi-lens analysis of a PR. You have the PR details and a blast radius audit.
+      You are performing a two-lens analysis of a PR. You have the PR details, blast radius
+      audit, project context, and contributor history.
 
       ## PR Information
 
@@ -166,64 +224,116 @@ steps:
 
       ## Project Context
 
-      {{project_context}}
+      {{project_context_data}}
+
+      ## Contributor Context
+
+      {{contributor_context}}
 
       ## Your Task
 
-      Analyze this PR from four executive perspectives:
+      Analyze this PR from two executive perspectives. These lenses ask fundamentally different
+      questions. Do not let them overlap — the CTO asks HOW, the CPO asks WHY and FOR WHOM.
 
-      ### CTO Lens
+      ---
 
-      Evaluate:
-      - **Architecture**: Does this fit the project's technical architecture? Does it introduce unnecessary coupling?
-      - **Security**: What risks does the blast radius audit reveal? Are they acceptable?
-      - **Dependencies**: Is the dependency management sound? Pinned versions? Trusted sources?
-      - **Integration pattern**: Is this the right way to integrate this capability?
-      - **Technical debt**: Does this add debt? Is it justified?
-      - **Operational risk**: What can go wrong in production?
+      ### CTO Lens — Technical Excellence and Risk
 
-      ### CPO Lens
+      Evaluate with ruthless technical honesty:
 
-      Evaluate:
-      - **Product fit**: Does this capability align with the product's value proposition?
-      - **User impact**: How does this change the user experience? For better or worse?
-      - **Timing**: Is this the right time to add this capability?
-      - **Design alignment**: Does the integration approach match how the product should work?
-      - **Trust & transparency**: Does this maintain or undermine user trust?
-      - **Opportunity cost**: What are we NOT doing by investing in this?
+      - **Architecture**: Does this fit the established technical architecture? Does it introduce
+        unnecessary coupling or violate patterns the project has committed to? Use the project
+        context to check against documented conventions.
+      - **Security**: What risks does the blast radius audit reveal? Prompt injection vectors,
+        filesystem access, data persistence, authentication changes.
+      - **Integration pattern**: Is this the right way to integrate this capability? Does it
+        follow the patterns already established in this codebase?
+      - **Technical debt**: Does this add debt? Is it justified by the value delivered?
+      - **Operational risk**: What can go wrong at runtime? What is the blast radius of a failure?
+      - **Correctness**: Does it do what it claims? Are there edge cases or failure modes the
+        diff introduces that are not addressed?
 
+      ---
 
-      ### COO Lens
+      ### CPO Lens — User Value and Product Strategy
 
-      Evaluate:
-      - **Deployment**: Does this change deployment complexity or risk?
-      - **Monitoring**: Can we observe the impact of this change in production?
-      - **Rollback**: How easy is it to undo if problems arise?
-      - **Process**: Does this change team workflows or coordination requirements?
-      - **Maintenance**: Who maintains this going forward? Is that sustainable?
+      You are evaluating this PR as a Chief Product Officer. Your north star is user value and
+      product strategy — not code quality. You ask fundamentally different questions than the CTO.
 
-      ### CFO Lens
+      **Your philosophy as a CPO:**
+      - Every PR either advances the product's promise to users or it does not. There is no neutral.
+      - A half-shipped feature is worse than no feature. Completeness is non-negotiable.
+      - The backlog is a set of promises made to users and the team. Deviations need justification.
+      - Opportunity cost is real. Every yes is a no to something else currently in the backlog.
+      - User trust is the product's most valuable asset. Every change either builds or spends it.
+      - "Does it work?" is the CTO's question. "Should it exist, for whom, and is it complete?" is yours.
 
-      Evaluate:
-      - **Cost**: What are the direct costs (compute, storage, API fees, licenses)?
-      - **Investment**: How much ongoing investment does this require?
-      - **Opportunity cost**: What else could the team be doing?
-      - **Risk exposure**: What financial risk does this introduce?
-      - **ROI timeline**: When does this pay for itself?
+      **Evaluate using the loaded project context (vision + backlog):**
+
+      1. **Strategic alignment**: Does this PR deliver on a commitment in the backlog or vision?
+         If it is not in the backlog — why is it being built now, and what does that say about
+         prioritization discipline? If it is in the backlog, was it built the way the product
+         intended? Does it match the stated goal?
+
+      2. **User value**: What specific user problem does this solve? Who is the user — not
+         "users in general" but the specific persona this serves. Describe the concrete moment
+         when a real user's work gets better because of this PR. If you cannot answer this
+         concretely, that is itself a finding.
+
+      3. **Product completeness**: Is this a complete experience a user can extract value from
+         today? Or does it depend on other unshipped work to be useful? Half-features create
+         confusion, erode trust, and accumulate as product debt. Name any incompleteness.
+
+      4. **User-facing failure mode**: When this breaks (not if — when), what does a user
+         experience? Not the technical failure mode — the user-facing failure mode. Is it
+         silent or visible? Recoverable or destructive? Does the user know what happened?
+
+      5. **Quality bar**: Does this meet the quality standard the product has established for
+         itself? Would you be comfortable putting this in front of a new user on day one?
+         Does the level of testing and documentation match the responsibility this feature takes on?
+
+      6. **Timing and priority**: Given the current sprint and backlog, is this the right work
+         right now? What sprint commitments does accepting this PR affect? Is the team and user
+         base ready for this capability?
+
+      7. **Opportunity cost**: What is explicitly not being shipped, reviewed, or prioritized
+         because of this PR? Name the specific backlog items that move further away by accepting
+         this work now.
+
+      8. **Product debt introduced**: Does this create product debt — features that technically
+         work but users cannot find, understand, or use without workarounds? Does it require
+         documentation, onboarding, or support investment not included in this PR?
+
+      **Write in language a product person can act on without reading the code.** Avoid
+      implementation details. Focus on user outcomes, strategic fit, and product quality signals.
+
+      ---
+
+      ### Tone Calibration
+
+      Use the contributor context to calibrate tone. First-time contributors get more explanatory
+      context — assume they do not know the project's architectural patterns yet. Regular
+      contributors get more direct, peer-level feedback.
+
+      ---
 
       ### Output Format
 
       Produce numbered recommendations. For each:
 
-      1. **Severity**: BLOCKING (must fix before merge), IMPORTANT (should address), or ADVISORY (consider for future)
-      2. **Lens**: CTO, CPO, COO, CFO, or MULTIPLE
-      3. **Finding**: One-sentence description of the issue
-      4. **Rationale**: Why this matters (2-3 sentences with specific evidence from the audit)
-      5. **Recommendation**: What specifically should change
+      1. **Severity**: BLOCKING, IMPORTANT, or ADVISORY
+      2. **Lens**: CTO or CPO (not both — pick the primary lens)
+      3. **Finding**: One-sentence description
+      4. **Rationale**: 2-3 sentences with specific evidence from the blast radius audit or
+         project context
+      5. **Ask**: The specific question to pose to the PR author in the review discussion.
+         Conversational, genuine, answerable. Something that opens a productive conversation.
+      6. **Resolution**: What specifically should change — one sentence
 
       Order: BLOCKING first, then IMPORTANT, then ADVISORY.
 
-      End with an **Overall Verdict**: DISCUSS — with a one-paragraph justification.
+      End with an **Overall Verdict**: DISCUSS — one paragraph naming the 1-2 most important
+      things to resolve.
 
   - id: assemble_review
     agent: foundation:zen-architect
@@ -232,7 +342,9 @@ steps:
     prompt: |
       ANALYZE MODE.
 
-      Assemble the final PR review document from the completed analysis.
+      Assemble the final PR review as a **discussion agenda** — not a report.
+      Philosophy: the conversation is the product. Each finding ends with the "Ask:" question
+      the reviewer poses to the PR author. Walk through this document one item at a time.
 
       ## PR Information
 
@@ -246,28 +358,94 @@ steps:
 
       {{analysis}}
 
-      ## Your Task
+      ## Project Context
 
-      Produce a clean, well-structured review document with these sections:
+      {{project_context_data}}
 
-      ### 1. Executive Summary
-      2-3 sentences: what this PR does, the overall blast radius, and the verdict.
+      ## Contributor Context
 
-      ### 2. PR Overview
-      Title, author, branch, files changed, additions/deletions. A plain-English summary of what the diff does.
-
-      ### 3. Blast Radius Summary
-      A table or concise list of what this PR actually brings into the project beyond the diff. Focus on what would surprise someone who only read the diff.
-
-      ### 4. Recommendations
-      The numbered recommendations from the multi-lens analysis, cleaned up and formatted consistently. Each with severity tag, lens tag, finding, rationale, and specific recommendation.
-
-      ### 5. Overall Verdict
-      DISCUSS — with the justification.
-
-      ### 6. Discussion Starters
-      3-5 questions the PR author and reviewer should discuss before making a final decision. These should be genuine open questions, not rhetorical ones.
+      {{contributor_context}}
 
       ---
 
-      This document will be used as the starting point for an interactive review discussion. Make it clear, scannable, and actionable.
+      ## Output Format
+
+      ### 1. Executive Summary
+      3 sentences: what this PR does, the overall blast radius signal, and the single most
+      important conversation to have.
+
+      ### 2. PR Overview
+      Title, author, branch, files changed, additions/deletions.
+      Plain-English summary of what the diff does (2-3 sentences).
+      Contributor profile: one line (first PR / new contributor / regular contributor + record).
+
+      ### 3. What This PR Actually Brings In
+      A tight table of what this PR changes beyond the diff description.
+      Focus on what would surprise someone who only read the PR title.
+      If nothing surprising: state "Blast radius matches PR description."
+
+      ### 4. The Conversation You Need To Have
+
+      Structure as a numbered agenda. For each BLOCKING issue:
+
+      ---
+      **[B{n}] {Title}** · {CTO/CPO}
+
+      {2-3 sentence rationale. No jargon. A product person should understand this without
+      reading the diff.}
+
+      **Ask:** "{The exact question to pose to the PR author. Specific, conversational,
+      genuinely answerable — not rhetorical.}"
+
+      **Resolution:** {One sentence on what the fix looks like.}
+
+      ---
+
+      Then IMPORTANT issues in the same format (prefix [I{n}]).
+      ADVISORY items (prefix [A{n}]) can be shorter — no Ask: required.
+
+      ### 5. Open Questions
+      3-5 genuine questions the analysis could not answer — things only the author or
+      decision-maker can resolve. Not rhetorical. Not covered above.
+
+      ### 6. Verdict: DISCUSS
+      One paragraph. What is the core tension? What needs to resolve for this to become
+      a clear decision?
+
+      ---
+
+      Tone: direct but constructive. Acknowledge what works. Be specific about what does not.
+      Leave the door open.
+
+  - id: save_review
+    type: bash
+    timeout: 30
+    output: saved_path
+    command: |
+      set -euo pipefail
+
+      cat > /tmp/pr_data_save.json <<'PRDATA_EOF'
+      {{pr_data}}
+      PRDATA_EOF
+
+      PR_NUM=$(jq -r '.number' /tmp/pr_data_save.json)
+      AUTHOR=$(jq -r '.author.login // .author.name // "unknown"' /tmp/pr_data_save.json)
+      DATE=$(date +%Y-%m-%d)
+
+      REPO_SLUG=$(echo "{{repo}}" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+      if [ -z "$REPO_SLUG" ]; then
+        REPO_SLUG=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)" || echo "repo")
+      fi
+
+      OUTDIR="docs/pr-reviews"
+      mkdir -p "$OUTDIR"
+
+      FILENAME="${OUTDIR}/${DATE}-${REPO_SLUG}-PR${PR_NUM}-${AUTHOR}.md"
+
+      cat > "$FILENAME" <<'REVIEW_EOF'
+      {{final_review}}
+      REVIEW_EOF
+
+      echo "Review saved to: $FILENAME"
+      echo "$FILENAME"
+

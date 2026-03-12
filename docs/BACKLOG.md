@@ -26,15 +26,15 @@ None — V1 shipped.
 
 | # | Item | Effort | Impact | Description |
 |---|------|--------|--------|-------------|
-| 1 | Alignment checking against project philosophy | M | H | Add a `project_vision` context variable that feeds the project's VISION.md/PRINCIPLES.md into the analysis. Add an explicit alignment check: "does this change align with the project's documented philosophy?" Currently the lenses check for generic risk, not alignment with your specific product. The engram-lite review caught the philosophy conflict by luck, not by design. |
+| ✅ 1 | Alignment checking against project philosophy | M | H | Add a `project_vision` context variable that feeds the project's VISION.md/PRINCIPLES.md into the analysis. Add an explicit alignment check: "does this change align with the project's documented philosophy?" Currently the lenses check for generic risk, not alignment with your specific product. The engram-lite review caught the philosophy conflict by luck, not by design. **Shipped in v2.0.0** |
 | 2 | Encode the conversation walk-through | M | H | The recipe produces a document, but the structured 1-by-1 discussion (the actual product per Principle 1) isn't guaranteed. Either strengthen coordinator instructions with a concrete protocol, or build a staged recipe with approval gates between recommendations. |
 
 ### Next 1-2 Sprints
 
 | # | Item | Effort | Impact | Description |
 |---|------|--------|--------|-------------|
-| 3 | Lens selection mechanism | S | M | Not every review needs all 4 lenses. Add an optional `lenses` context variable (e.g., `lenses: "CTO,CPO"`) with a smart default that picks relevant lenses based on what the blast radius audit finds. Reduces noise for simple changes. |
-| 4 | Reshape output for conversation, not reading | S | M | The assembled document reads like a report. Reshape the assembly step to produce a numbered discussion agenda with explicit questions per recommendation — designed to be walked through, not read as a wall of text. |
+| ✅ 3 | Lens selection mechanism | S | M | Not every review needs all 4 lenses. Add an optional `lenses` context variable (e.g., `lenses: "CTO,CPO"`) with a smart default that picks relevant lenses based on what the blast radius audit finds. Reduces noise for simple changes. **Partially addressed — COO/CFO removed, CTO/CPO deepened** |
+| ✅ 4 | Reshape output for conversation, not reading | S | M | The assembled document reads like a report. Reshape the assembly step to produce a numbered discussion agenda with explicit questions per recommendation — designed to be walked through, not read as a wall of text. **Shipped in v2.0.0** |
 
 ### Future (V2/V3)
 
