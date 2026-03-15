@@ -10,6 +10,8 @@ AI-powered development amplifies individual velocity but fragments collective co
 
 Change Advisor forces the alignment conversation that velocity skipped.
 
+A 1-line dependency add can bring in 68 files, 9 tools, 3 hooks. Reviewers assess the surface. Change Advisor audits the substance.
+
 ## How It Works
 
 1. **Auto-load project context** — reads your vision doc, backlog, test logs, and git history from the working directory
@@ -88,10 +90,7 @@ The CPO lens asks fundamentally different questions than the CTO. Where the CTO 
 
 ## Built by
 
-**Chris Park** — Senior PM, Microsoft Office of the CTO, AI Incubation group.
-Engineering degree from Waterloo. 17 years shipping product.
-
-[LinkedIn](https://www.linkedin.com/in/chrispark1/) · [GitHub](https://github.com/cpark4x)
+[Chris Park](https://www.linkedin.com/in/chrispark1/) — Microsoft Office of the CTO, AI Incubation. Building the tools he actually uses.
 
 ---
 
